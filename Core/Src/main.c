@@ -72,6 +72,40 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+volatile uint8_t gu8_State = IDLE;
+volatile uint8_t gu8_MSG[35] = {'\0'};
+volatile uint32_t gu32_T1 = 0;
+volatile uint32_t gu32_T2 = 0;
+volatile uint32_t gu32_Ticks = 0;
+volatile uint16_t gu16_TIM2_OVC = 0;
+volatile uint32_t gu32_Freq = 0;
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
+{
+    if(gu8_State == IDLE)
+    {
+        gu32_T1 = TIM2->CCR1;
+        gu16_TIM2_OVC = 0;
+        gu8_State = DONE;
+    }
+    else if(gu8_State == DONE)
+    {
+        gu32_T2 = TIM2->CCR1;
+        gu32_Ticks = (gu32_T2 + (gu16_TIM2_OVC * 65536)) - gu32_T1;
+        gu32_Freq = (uint32_t)(F_CLK/gu32_Ticks);
+        if(gu32_Freq != 0)
+        {
+          //sprintf(gu8_MSG, "Frequency = %lu Hz\n\r", gu32_Freq);
+          //HAL_UART_Transmit(&huart1, gu8_MSG, sizeof(gu8_MSG), 100);
+        }
+        gu8_State = IDLE;
+    }
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+{
+    gu16_TIM2_OVC++;
+}
 
 /* USER CODE END 0 */
 
@@ -120,6 +154,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+	  HAL_Delay(100); //TODO: print to UART peripheral for testing
+	  //printf("the frequency is %lu hz\n\r", gu32_Freq);
 
     /* USER CODE BEGIN 3 */
   }
